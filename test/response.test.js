@@ -113,6 +113,51 @@ describe('response', () => {
       assert.strictEqual(res.text, example.nt)
     })
 
+    it('should allow serializing with automatic base iri', async () => {
+      const app = express()
+
+      app.use(rdfHandler({
+        baseIriFromRequest: true
+      }))
+      app.use(async (req, res) => {
+        await res.dataset(rdf.dataset([
+          rdf.quad(
+            rdf.namedNode('subject'),
+            rdf.namedNode('predicate'),
+            rdf.literal('object'))
+        ]))
+      })
+
+      const res = await request(app).get('/')
+        .set('accept', 'application/n-triples')
+        .set('host', 'example.com')
+
+      assert.strictEqual(res.text, example.nt)
+    })
+
+    it('should allow serializing with provided base iri', async () => {
+      const app = express()
+
+      app.use(rdfHandler({
+        baseIriFromRequest() {
+          return 'http://example.com/'
+        }
+      }))
+      app.use(async (req, res) => {
+        await res.dataset(rdf.dataset([
+          rdf.quad(
+            rdf.namedNode('subject'),
+            rdf.namedNode('predicate'),
+            rdf.literal('object'))
+        ]))
+      })
+
+      const res = await request(app).get('/')
+        .set('accept', 'application/n-triples')
+
+      assert.strictEqual(res.text, example.nt)
+    })
+
     it('should forward serializer errors', async () => {
       let error = null
       const app = express()
